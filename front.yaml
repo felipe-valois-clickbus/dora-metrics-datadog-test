@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teste-dora
+  namespace: teste-dora
+  labels:
+    app: teste-dora
+    tags.datadoghq.com/env: staging
+    tags.datadoghq.com/service: teste-dora
+    tags.datadoghq.com/version: 1.0.0
+  annotations: {}
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: teste-dora
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        admission.datadoghq.com/enabled: 'true'
+        app: teste-dora
+        tags.datadoghq.com/env: staging
+        tags.datadoghq.com/service: teste-dora
+        tags.datadoghq.com/version: 0.81.1-staging
+      annotations:
+        admission.datadoghq.com/js-lib.version: v5.12.0
+    spec:
+      containers:
+        - name: teste-dora
+          image: 254880935884.dkr.ecr.us-east-1.amazonaws.com/teste-dora:1.0.0
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: DD_PROFILING_ENABLED
+              value: 'true'
+            - name: DD_LOGS_INJECTION
+              value: 'true'
+            - name: DD_ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/env']
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/version']
+            - name: DT_RELEASE_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/version']
+            - name: DT_RELEASE_PRODUCT
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/instance']
+            - name: DT_RELEASE_BUILD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/version']
+          
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: default
+      serviceAccount: default
+      securityContext: {}
+      schedulerName: default-scheduler
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
